@@ -1,20 +1,146 @@
 from pseudorandom_number_generator import generate_random_numbers
 
+# Queue parameters (G/G/S/K)
+S = 1                    # Number of servers
+K = 5                    # Total system capacity
+ArrivalMin = 2.0         # Minimum inter-arrival time
+ArrivalMax = 5.0         # Maximum inter-arrival time  
+ServiceMin = 3.0         # Minimum service time
+ServiceMax = 5.0         # Maximum service time
+SimulationTime = 1000.0  # Total simulation time
+
+GlobalTime = 0.0
+Queue = 0 
+ServersOccupied = 0 
+NextArrivalTime = 2.0
+NextDepartureTime = float('inf')
+
+times = [0] * (K + 1) 
+random_numbers = []
+current_index = 0
+
 def main():
-    quantity = 100  # You can change this value as needed
+    global GlobalTime, Queue, ServersOccupied, NextArrivalTime, NextDepartureTime, random_numbers
     
-    print(f"Generating {quantity} pseudo-random numbers...")
-    random_numbers = generate_random_numbers(quantity)
+    random_numbers = generate_random_numbers(100000)
     
-    print(f"\nFirst 5 generated numbers:")
-    for i, num in enumerate(random_numbers[:5], 1):
-        print(f"{i}: {num:.10f}")
+    GlobalTime = 0.0
+    Queue = 0
+    ServersOccupied = 0
+    NextArrivalTime = generate_arrival_time()
+    NextDepartureTime = float('inf')
     
-    print(f"\nLast 5 generated numbers:")
-    for i, num in enumerate(random_numbers[-5:], len(random_numbers)-4):
-        print(f"{i}: {num:.10f}")
+    print(f"Queue Simulator G/G/{S}/{K}")
+    print("=" * 30)
+    print(f"Uniform inter-arrival time: {ArrivalMin}-{ArrivalMax}")
+    print(f"Uniform service time: {ServiceMin}-{ServiceMax}")
+    print(f"Servers: {S}")
+    print(f"Total system capacity: {K}")
+    print("=" * 30)
     
-    print(f"\nTotal of generated numbers: {len(random_numbers)}")
+    while GlobalTime < SimulationTime:
+        event = NextEvent()
+        
+        if event == "arrival":
+            Arrival()
+        elif event == "departure":
+            Departure()
+    
+    print_statistics()
+
+def NextEvent():
+    global NextArrivalTime, NextDepartureTime
+    
+    if NextArrivalTime < NextDepartureTime:
+        return "arrival"
+    else:
+        return "departure"
+
+def Arrival():
+    global GlobalTime, Queue, ServersOccupied, NextArrivalTime, NextDepartureTime
+    
+    GlobalTime = NextArrivalTime
+    
+    current_state = Queue + ServersOccupied
+    if current_state <= K:
+        times[current_state] += 1
+    
+    print(f"Arrival at time {GlobalTime:.2f}, Queue: {Queue}, Servers occupied: {ServersOccupied}")
+    
+    if ServersOccupied < S:
+        ServersOccupied += 1
+        NextDepartureTime = GlobalTime + generate_service_time()
+        print(f"  Server served immediately, Next departure: {NextDepartureTime:.2f}")
+    else:
+        if Queue < (K - S):
+            Queue += 1
+            print(f"  Client added to queue, Queue size: {Queue}")
+        else:
+            print(f"  Client lost (system full)")
+    
+    NextArrivalTime = GlobalTime + generate_arrival_time()
+
+def Departure():
+    global GlobalTime, Queue, ServersOccupied, NextDepartureTime
+    
+    GlobalTime = NextDepartureTime
+    
+    current_state = Queue + ServersOccupied
+    if current_state <= K:
+        times[current_state] += 1
+    
+    print(f"Departure at time {GlobalTime:.2f}, Queue: {Queue}, Servers occupied: {ServersOccupied}")
+    
+    if Queue > 0:
+        Queue -= 1
+        NextDepartureTime = GlobalTime + generate_service_time()
+        print(f"  Next client served, Next departure: {NextDepartureTime:.2f}")
+    else:
+        ServersOccupied -= 1
+        if ServersOccupied > 0:
+            NextDepartureTime = GlobalTime + generate_service_time()
+            print(f"  Server released, Next departure: {NextDepartureTime:.2f}")
+        else:
+            NextDepartureTime = float('inf')
+            print(f"  All servers are free")
+
+def generate_arrival_time():
+    global current_index, random_numbers
+    if current_index < len(random_numbers):
+        u = random_numbers[current_index]
+        current_index += 1
+        return ArrivalMin + u * (ArrivalMax - ArrivalMin)
+    else:
+        random_numbers.extend(generate_random_numbers(1000))
+        u = random_numbers[current_index]
+        current_index += 1
+        return ArrivalMin + u * (ArrivalMax - ArrivalMin)
+
+def generate_service_time():
+    global current_index, random_numbers
+    if current_index < len(random_numbers):
+        u = random_numbers[current_index]
+        current_index += 1
+        return ServiceMin + u * (ServiceMax - ServiceMin)
+    else:
+        random_numbers.extend(generate_random_numbers(1000))
+        u = random_numbers[current_index]
+        current_index += 1
+        return ServiceMin + u * (ServiceMax - ServiceMin)
+
+def print_statistics():
+    print("\n" + "=" * 50)
+    print("FINAL STATISTICS")
+    print("=" * 50)
+    print(f"Total simulation time: {GlobalTime:.2f}")
+    print(f"Configuration: G/G/{S}/{K}")
+    print(f"Uniform inter-arrival time: {ArrivalMin}-{ArrivalMax}")
+    print(f"Uniform service time: {ServiceMin}-{ServiceMax}")
+    print("\nTime in each system state:")
+    
+    for i in range(K + 1):
+        percentage = (times[i] / GlobalTime * 100) if GlobalTime > 0 else 0
+        print(f"{i}: {times[i]:.2f} ({percentage:.2f}%)")
 
 if __name__ == "__main__":
     main()
