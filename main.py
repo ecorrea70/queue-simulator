@@ -12,7 +12,7 @@ SimulationTime = 1000.0  # Total simulation time
 GlobalTime = 0.0
 Queue = 0 
 ServersOccupied = 0 
-NextArrivalTime = 2.0
+NextArrivalTime = 2.0  # First arrival time
 NextDepartureTime = float('inf')
 
 times = [0] * (K + 1) 
