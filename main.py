@@ -1,7 +1,7 @@
 from pseudorandom_number_generator import generate_random_numbers
 
 # Queue parameters (G/G/S/K)
-S = 1                    # Number of servers
+S = 2                    # Number of servers
 K = 5                    # Total system capacity
 ArrivalMin = 2.0         # Minimum inter-arrival time
 ArrivalMax = 5.0         # Maximum inter-arrival time  
