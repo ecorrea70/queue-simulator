@@ -15,12 +15,13 @@ ServersOccupied = 0
 NextArrivalTime = 2.0  # First arrival time
 NextDepartureTime = float('inf')
 
-times = [0] * (K + 1) 
+times = [0.0] * (K + 1)
 random_numbers = []
 current_index = 0
+LastEventTime = 0.0
 
 def main():
-    global GlobalTime, Queue, ServersOccupied, NextArrivalTime, NextDepartureTime, random_numbers
+    global GlobalTime, Queue, ServersOccupied, NextArrivalTime, NextDepartureTime, random_numbers, LastEventTime
     
     random_numbers = generate_random_numbers(100000)
     
@@ -40,12 +41,20 @@ def main():
     
     while GlobalTime < SimulationTime:
         event = NextEvent()
-        
+
+        # Calcular tempo decorrido desde o último evento e acumular no estado atual
+        current_state = Queue + ServersOccupied
+        next_event_time = min(NextArrivalTime, NextDepartureTime)
+        time_in_state = next_event_time - LastEventTime
+        if current_state <= K and time_in_state > 0:
+            times[current_state] += time_in_state
+        LastEventTime = next_event_time
+
         if event == "arrival":
             Arrival()
         elif event == "departure":
             Departure()
-    
+
     print_statistics()
 
 def NextEvent():
@@ -62,8 +71,7 @@ def Arrival():
     GlobalTime = NextArrivalTime
     
     current_state = Queue + ServersOccupied
-    if current_state <= K:
-        times[current_state] += 1
+    # Removido: contabilização do tempo do estado aqui, pois agora é feito no loop principal
     
     print(f"Arrival at time {GlobalTime:.2f}, Queue: {Queue}, Servers occupied: {ServersOccupied}")
     
@@ -86,8 +94,7 @@ def Departure():
     GlobalTime = NextDepartureTime
     
     current_state = Queue + ServersOccupied
-    if current_state <= K:
-        times[current_state] += 1
+    # Removido: contabilização do tempo do estado aqui, pois agora é feito no loop principal
     
     print(f"Departure at time {GlobalTime:.2f}, Queue: {Queue}, Servers occupied: {ServersOccupied}")
     
